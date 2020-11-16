@@ -1,6 +1,5 @@
 import simpy
-import InteruptingAnotherProcess
-from InteruptingAnotherProcess import InterruptingAnotherProcess
+from TutorialDemos.InteruptingAnotherProcess import InterruptingAnotherProcess
 
 env = simpy.Environment()
 car = InterruptingAnotherProcess.Car(env)
