@@ -13,11 +13,17 @@ class Restaurant(object):
         print('%d customers in line' % len(self.server.queue))
 
 class Customer(object):
-    def __init__(self, env, name, restaurant):
+    def __init__(self, env, name, restaurant, seed):
         self.env = env
         self.name = name
         self.restaurant = restaurant
-        self.serve_time = 1
+        self.serve_time = self.get_serve_time(seed)
+
+    def get_serve_time(self, seed):
+        serve_time = RandomState(seed).normal(300, 60)
+        while serve_time <= 0:
+            serve_time = RandomState(seed).normal(300, 60)
+        return serve_time
 
     def handle(self):
         print('%s arrives at the restaurant at %.2f' % (self.name, self.env.now))
@@ -49,5 +55,5 @@ def setup(env, num_servers, lambda_arr_rate, seed):
     while True:
         yield env.timeout(interval_arrival_time)
         customer_count += 1
-        customer = Customer(env, 'Customer %d' % customer_count, restaurant)
+        customer = Customer(env, 'Customer %d' % customer_count, restaurant, seed)
         env.process(customer.handle())
