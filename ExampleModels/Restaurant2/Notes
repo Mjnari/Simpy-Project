@@ -6,3 +6,20 @@ Limitations:
 
     Not easy to customize resources - I wanted to give the servers different shifts
     and skill levels, but there's no native support for this.
+
+    No built in ways to effectively manipulate the queue at scale - I wanted to clear the queue
+    at the end of each day. Simpy doesn't natively support this. Building this myself
+    was trivial so I still added it, but surprising it is not supported. This is much
+    smoother in Arena
+
+    No built in analysis tools - I had to code all of the analysis myself. This is much
+    smoother in Arena.
+
+    Requires somewhat significant Python knowledge
+
+
+Pros:
+    Someone who is good at Python will pick this up much more quickly than learning Arena
+
+Misc:  
+    Numbers were arbitrarily picked based on what looked decent when I ran the sim
