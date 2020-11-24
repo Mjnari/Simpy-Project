@@ -1,8 +1,9 @@
-Limitations:
-    No well supported way to add to resources - I wanted to add more servers when the 
-    line got too full but documentation shows no reasonable support for this was to
-    use simpy containers or simpy store. This was frustrating to maintain because 
-    both of these require manual request and release, so I removed this feature. 
+Limitations compared to Arena:
+    No well supported way to add more resources - I wanted to add more servers when the 
+    line got too full but documentation shows no reasonable support for this. The docs say
+    to use simpy containers or simpy store instead of simpy resources. This was frustrating 
+    to maintain because both of these require manual request and release which would take a 
+    significant refactor, so I decided not to add more resources.
 
     Not easy to customize resources - I wanted to give the servers different shifts
     and skill levels, but there's no native support for this.
@@ -13,13 +14,24 @@ Limitations:
     smoother in Arena
 
     No built in analysis tools - I had to code all of the analysis myself. This is much
-    smoother in Arena.
+    smoother in Arena. This also meant I struggled to find a clean way to run all the
+    analysis after the simulation was run. To mostly circumvent this, I ran my analysis at
+    the end of each day
 
     Requires somewhat significant Python knowledge
 
+    No native support for graphics like in Arena
 
-Pros:
+
+Pros compared to Arena:
     Someone who is good at Python will pick this up much more quickly than learning Arena
 
+    Anything the framework does not support can usually be handled by native Python or by
+    working with other Python libraries/frameworks. In Arena anything that Arena does not
+    support is often not so simple to workaround.
+
 Misc:  
-    Numbers were arbitrarily picked based on what looked decent when I ran the sim
+    Numbers were arbitrarily picked based on what looked decent when I ran the sim and 
+    educated guesses on what best reflected reality
+
+    Sim time is arbitrary but the examples in the documentation use
