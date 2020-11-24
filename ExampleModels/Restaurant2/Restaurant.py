@@ -14,27 +14,28 @@ class Restaurant(object):
         print('%d customers in line' % len(self.server.queue))
 
 class Customer(object):
-    def __init__(self, env, name, restaurant, seed):
+    def __init__(self, env, customer_count, restaurant, seed):
         self.env = env
-        # Customer name in the format 'Customer #' in ascending order
-        self.name = name
+        self.name = 'Customer ' + str(customer_count)
+        self.customer_count = customer_count
         self.restaurant = restaurant
-        # the amount of time this customer spends ordering + eating
-        self.serve_time = self.get_serve_time(seed)
-        # the amount of time this customer is willing to wait in line
+        self.arrival_time = env.now
+        # The amount of time this customer is willing to wait in line
         self.patience = self.get_patience(seed)
+        # The amount of time this customer spends ordering + eating
+        self.serve_time = self.get_serve_time(seed)
 
     # Calculates serve time as Nor(3000, 600) seconds
     # If this number is <= 0 then re-run it
     def get_serve_time(self, seed):
-        serve_time = RandomState(seed).normal(3000, 600)
+        serve_time = RandomState(seed + self.customer_count).normal(3000, 600)
         while serve_time <= 0:
-            serve_time = RandomState(seed).normal(3000, 600)
+            serve_time = RandomState(seed + self.customer_count).normal(3000, 600)
         return serve_time
 
     # Calculates patiences as exp(6000) seconds
     def get_patience(self, seed):
-        return RandomState(seed).exponential(6000)
+        return RandomState(seed + self.customer_count).exponential(6000)
 
     def handle(self):
         print('%s arrives at the restaurant at %.2f' % (self.name, self.env.now))
@@ -42,14 +43,16 @@ class Customer(object):
             # Either wait until a server is free to serve this customer
             # or until this customer runs out of patience and leaves the line
             results = yield request | self.env.timeout(self.patience)
+            wait = self.env.now - self.arrival_time
 
             if request in results:
                 print('%s starts receiving service at %.2f' % (self.name, self.env.now))
+                print('%s waited %d seconds in line' % (self.name, wait))
                 # Serve the customer
                 yield self.env.process(self.restaurant.serve(self.env, self.name, self.serve_time))
                 print('%s leaves the restaurant at %.2f' % (self.name, self.env.now))
             else:
-                print('%s got tired of waiting in line and left' % self.name)
+                print('%s got tired of waiting in line after %d seconds and left' % (self.name, wait))
 
 
 def setup(env, num_servers, lambda_arr_rate, seed):
@@ -67,6 +70,6 @@ def setup(env, num_servers, lambda_arr_rate, seed):
         # a new customer object is created
         yield env.timeout(interval_arrival_time)
         customer_count += 1
-        customer = Customer(env, 'Customer %d' % customer_count, restaurant, seed)
+        customer = Customer(env, customer_count, restaurant, seed)
         # Process that customer object
         env.process(customer.handle())
