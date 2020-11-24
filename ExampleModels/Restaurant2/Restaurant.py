@@ -5,6 +5,7 @@ from numpy.random import RandomState
 class Restaurant(object):
     def __init__(self, env, num_servers):
         self.env = env
+        # Servers are resources, similar to Arena
         self.server = simpy.Resource(env, num_servers)
 
     # Process for serving the customer
@@ -39,6 +40,10 @@ class Customer(object):
 
     def handle(self):
         print('%s arrives at the restaurant at %.2f' % (self.name, self.env.now))
+        # This with statement handles the following:
+        # When a server resource is available, use it
+        # When the server resource is done being used, release it
+        # Without the with statement I would have to manually seize and release resources
         with self.restaurant.server.request() as request:
             # Either wait until a server is free to serve this customer
             # or until this customer runs out of patience and leaves the line
@@ -52,7 +57,7 @@ class Customer(object):
                 yield self.env.process(self.restaurant.serve(self.env, self.name, self.serve_time))
                 print('%s leaves the restaurant at %.2f' % (self.name, self.env.now))
             else:
-                print('%s got tired of waiting in line after %d seconds and left' % (self.name, wait))
+                print('%s got tired of waiting in line after %d seconds, so they left' % (self.name, wait))
 
 
 def setup(env, num_servers, lambda_arr_rate, seed):

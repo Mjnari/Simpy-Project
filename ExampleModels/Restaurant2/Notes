@@ -1,0 +1,8 @@
+Limitations:
+    No well supported way to add to resources - I wanted to add more servers when the 
+    line got too full but documentation shows no reasonable support for this was to
+    use simpy containers or simpy store. This was frustrating to maintain because 
+    both of these require manual request and release, so I removed this feature. 
+
+    Not easy to customize resources - I wanted to give the servers different shifts
+    and skill levels, but there's no native support for this.
