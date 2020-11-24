@@ -18,31 +18,28 @@ class Customer(object):
         self.name = name
         self.restaurant = restaurant
         self.serve_time = self.get_serve_time(seed)
+        self.patience = self.get_patience(seed)
 
     def get_serve_time(self, seed):
-        serve_time = RandomState(seed).normal(300, 60)
+        serve_time = RandomState(seed).normal(3000, 600)
         while serve_time <= 0:
-            serve_time = RandomState(seed).normal(300, 60)
+            serve_time = RandomState(seed).normal(3000, 600)
         return serve_time
+
+    def get_patience(self, seed):
+        return RandomState(seed).exponential(6000)
 
     def handle(self):
         print('%s arrives at the restaurant at %.2f' % (self.name, self.env.now))
         with self.restaurant.server.request() as request:
-            yield request
+            results = yield request | self.env.timeout(self.patience)
 
-            print('%s starts receiving service at %.2f' % (self.name, self.env.now))
-            yield self.env.process(self.restaurant.serve(self.env, self.name, self.serve_time))
-            print('%s leaves the restaurant at %.2f' % (self.name, self.env.now))
-
-# def customer(env, name, restaurant):
-#     print('%s arrives at the restaurant at %.2f' % (name, env.now))
-#     with restaurant.server.request() as request:
-#         yield request
-
-#         print('%s starts receiving service at %.2f' % (name, env.now))
-#         serve_time = 1
-#         yield env.process(restaurant.serve(env, name, serve_time))
-#         print('%s leaves the restaurant at %.2f' % (name, env.now))
+            if request in results:
+                print('%s starts receiving service at %.2f' % (self.name, self.env.now))
+                yield self.env.process(self.restaurant.serve(self.env, self.name, self.serve_time))
+                print('%s leaves the restaurant at %.2f' % (self.name, self.env.now))
+            else:
+                print('%s got tired of waiting in line and left' % self.name)
 
 
 def setup(env, num_servers, lambda_arr_rate, seed):
