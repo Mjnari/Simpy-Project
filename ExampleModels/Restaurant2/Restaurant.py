@@ -29,7 +29,6 @@ class Restaurant(object):
     def serve(self, env, customer_name, serve_time):
         yield self.env.timeout(serve_time)
         print('Finished serving %s at %.2f' % (customer_name, env.now))
-        print('%d customers in line' % self.stats["line_length"])
 
         self.stats["served_today"] += 1
         self.stats["served_total"] += 1
@@ -60,13 +59,13 @@ class Restaurant(object):
         print('\nStats for today:')
         print('%d customers served today' % self.stats["served_today"])
         print('The longest the line got today was %d customers long' % self.stats["max_line_today"])
-        print('%d customers got impatient and left today' % self.stats["customer_leave_today"])
+        print('%d customers got tired of waiting and left today' % self.stats["customer_leave_today"])
         print('%.2f average customers served per server today' % (self.stats["served_today"]/self.stats["server_count"]))
 
         print('\nOverall stats:')
         print('%d customers served in total, averaging %.2f per day' % (self.stats["served_total"], self.stats["served_total"]/self.stats["day"]))
         print('The longest the line has ever been is %d customers long' % self.stats["max_line_total"])
-        print('%d customers have gotten impatient and left in total' % self.stats["customer_leave_total"])
+        print('%d customers have gotten tired of waiting and left in total' % self.stats["customer_leave_total"])
         print('%.2f average customers served per server, per day\n' % (self.stats["served_total"]/self.stats["server_count"]/self.stats["day"]))
 
     # Maintanance for some of the stats printed by analysis()
@@ -95,17 +94,17 @@ class Customer(object):
         # The amount of time this customer spends ordering + eating
         self.serve_time = self.get_serve_time(seed)
 
-    # Calculates serve time as Nor(60, 15) minutes
+    # Calculates serve time as Nor(60, 20) minutes
     # If this number is <= 0 then re-run it
     # This means this is not truely a normal distribution, it also makes it vulnerable to
     # significantly slowing the run time if numbers are chose poorly
     # Also can cause sequences of customers with the same serve times
     def get_serve_time(self, seed):
         buffer = 0
-        serve_time = RandomState(seed + self.customer_count).normal(60, 15)
+        serve_time = RandomState(seed + self.customer_count).normal(60, 20)
         while serve_time <= 0:
             buffer += 1
-            serve_time = RandomState(seed + self.customer_count + buffer).normal(60, 15)
+            serve_time = RandomState(seed + self.customer_count + buffer).normal(60, 20)
         return serve_time
 
     # Calculates patiences as exp(60) minutes
@@ -131,14 +130,13 @@ class Customer(object):
                 self.restaurant.stats["line_length"] -= 1
                 # Restarant is open and customer still has patience, so start serving customer
                 if request in results:
-                    print('%s starts receiving service at %.2f' % (self.name, self.env.now))
-                    print('%s waited %.2f minutes in line' % (self.name, wait))
+                    print('%s starts receiving service at %.2f after waiting %.2f minutes in line' % (self.name, self.env.now, wait))
                     # Serve the customer
                     yield self.env.process(self.restaurant.serve(self.env, self.name, self.serve_time))
                     print('%s leaves the restaurant at %.2f' % (self.name, self.env.now))
                 # Restarant is open but the customer has run out of patience in line, the customer leaves
                 else:
-                    print('%s got tired of waiting in line for %.2f minutes, so they left' % (self.name, wait))
+                    print('%s got tired of waiting in line after %.2f minutes, so they left' % (self.name, wait))
                     self.restaurant.stats["customer_leave_today"] += 1
                     self.restaurant.stats["customer_leave_total"] += 1
             # Restaurant is closed. Those currently being served will finish being served
@@ -169,5 +167,6 @@ def setup(env, num_servers, lambda_arr_rate, seed, days):
             customer = Customer(env, customer_count, restaurant, seed)
             # Process that customer object
             env.process(customer.simulate())
+            print('%d customers in line' % restaurant.stats["line_length"])
         else:
             yield env.timeout(restaurant.closed_period)
