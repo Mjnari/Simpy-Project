@@ -45,14 +45,15 @@ class Restaurant(object):
                 # finish serving those already being served.
                 # Code to handle emptying the line is in Customer.simulate()
                 print('Closing for the night. Successful day number %d!' % self.stats["day"])
-                yield self.env.timeout(self.closed_period)
-                self.is_open = True
                 self.stats["day"] += 1
                 
                 # Printing and maintaining some stats
                 self.update_line_length_stats()
                 self.analysis()
                 self.reset_stats()
+
+                yield self.env.timeout(self.closed_period)
+                self.is_open = True
 
     # Print end of day stats
     def analysis(self):
@@ -66,7 +67,7 @@ class Restaurant(object):
         print('%d customers served in total, averaging %.2f per day' % (self.stats["served_total"], self.stats["served_total"]/self.stats["day"]))
         print('The longest the line has ever been is %d customers long' % self.stats["max_line_total"])
         print('%d customers have gotten impatient and left in total' % self.stats["customer_leave_total"])
-        print('%.2f average customers served per server, per day' % (self.stats["served_total"]/self.stats["server_count"]/self.stats["day"]))
+        print('%.2f average customers served per server, per day\n' % (self.stats["served_total"]/self.stats["server_count"]/self.stats["day"]))
 
     # Maintanance for some of the stats printed by analysis()
     def reset_stats(self):
@@ -107,9 +108,9 @@ class Customer(object):
             serve_time = RandomState(seed + self.customer_count + buffer).normal(60, 15)
         return serve_time
 
-    # Calculates patiences as exp(30) minutes
+    # Calculates patiences as exp(60) minutes
     def get_patience(self, seed):
-        return RandomState(seed + self.customer_count).exponential(30)
+        return RandomState(seed + self.customer_count).exponential(60)
 
     # Simulates the customer arriving and being processed
     def simulate(self):
@@ -126,6 +127,8 @@ class Customer(object):
             wait = self.env.now - self.arrival_time
 
             if self.restaurant.is_open:
+                # Remove customer from line  
+                self.restaurant.stats["line_length"] -= 1
                 # Restarant is open and customer still has patience, so start serving customer
                 if request in results:
                     print('%s starts receiving service at %.2f' % (self.name, self.env.now))
@@ -146,16 +149,19 @@ class Customer(object):
 
 def setup(env, num_servers, lambda_arr_rate, seed, days):
     restaurant = Restaurant(env, num_servers)
-    # The interval arrival time for when customers arive at the restuarant
-    # This is a Poisson(lambda) distribution
-    interval_arrival_time = RandomState(seed).poisson(lambda_arr_rate)
 
+    buffer = 0
     customer_count = 0
 
     # Create more customer arrivals, and process them
     # while the simulation is running
     while True:
+        # The interval arrival time for when customers arive at the restuarant
+        # This is a Poisson(lambda) distribution
+        interval_arrival_time = RandomState(seed + buffer).poisson(lambda_arr_rate)
+        buffer += 1
         yield env.timeout(interval_arrival_time)
+
         if (restaurant.is_open):
             # A customer arrives at the end of this timeout, so
             # a new customer object is created
